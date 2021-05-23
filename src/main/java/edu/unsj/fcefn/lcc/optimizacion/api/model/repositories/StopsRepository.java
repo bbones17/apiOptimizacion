@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface StopsRepository extends CrudRepository<StopEntity, Integer> {
+    @Override
     List<StopEntity> findAll();
 }

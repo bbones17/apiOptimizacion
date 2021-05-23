@@ -2,7 +2,6 @@ package edu.unsj.fcefn.lcc.optimizacion.api.controllers;
 
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.StopDTO;
 import edu.unsj.fcefn.lcc.optimizacion.api.services.StopsService;
-import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.StopDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

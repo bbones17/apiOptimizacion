@@ -7,6 +7,8 @@ import edu.unsj.fcefn.lcc.optimizacion.api.model.repositories.StopsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,11 +17,26 @@ import java.util.stream.Collectors;
 public class StopsService {
 
     @Autowired
-    StopsRepository stopsRepository;
-
-    @Autowired
     StopsMapper stopsMapper;
 
+    @Autowired
+    StopsRepository stopsRepository;
+    List<StopDTO> stops;
+
+  @PostConstruct
+    private void init()
+    {
+        this.stops =this
+                .findAll()
+                .stream()
+                .sorted(Comparator.comparing(StopDTO::getRanking).reversed())
+                .collect(Collectors.toList())
+                .subList(0,10);
+    }
+
+    public List<StopDTO> getStops() {
+        return stops;
+    }
     public List<StopDTO> findAll(){
         return stopsRepository
                 .findAll()
@@ -56,5 +73,8 @@ public class StopsService {
             throw new Exception("Stop not found");
         }
     }
+
+
+
 
 }

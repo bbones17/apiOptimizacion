@@ -1,146 +1,188 @@
 package edu.unsj.fcefn.lcc.optimizacion.api.algorithm;
-
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.FrameDTO;
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.StopDTO;
-import edu.unsj.fcefn.lcc.optimizacion.api.services.FramesService;
-import edu.unsj.fcefn.lcc.optimizacion.api.services.StopsService;
 import org.moeaframework.core.Solution;
-
 import org.moeaframework.core.Variable;
 import org.moeaframework.core.variable.EncodingUtils;
 import org.moeaframework.core.variable.Permutation;
 import org.moeaframework.problem.AbstractProblem;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.lang.annotation.Native;
+
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 public class RoutingProblem extends AbstractProblem {
 
-
-    @Autowired
-    StopsService stopsService;
-    @Autowired
-    FramesService framesService;
-
     List<StopDTO> stops;
+    List<FrameDTO> frames;
 
-
-    public RoutingProblem() {
-        super(1, 2);
-        this.stops = stopsService
-                .findAll()
-                .stream()
-                .sorted(Comparator.comparing(StopDTO::getRanking).reversed())
-                .collect(Collectors.toList())
-                .subList(0, 20);
+    public RoutingProblem(List<StopDTO> stops, List<FrameDTO> frames)
+    {
+        super(1,2);
+        this.stops = stops;
+        this.frames = frames;
     }
 
-        @Override
-        public void evaluate (Solution solution){
-            solution.setObjective(0, totalPrice(solution.getVariable(0)));//calculo precio
-            solution.setObjective(1, totalTime(solution.getVariable(0))); //calculo tiempo
-        }
+    @Override
+    public void evaluate(Solution solution)
+    {
+        solution.setObjective(0, totalPrice(solution.getVariable(0)));
+        solution.setObjective(1, totalTime(solution.getVariable(0)));
+    }
 
-        private double totalPrice (Variable variable)
+    private double totalPrice(Variable variable)
+    {
+        Permutation permutation = (Permutation) variable;
+
+        double totalPrice = 0;
+
+        for (int i = 0; i < permutation.size() - 1; i++)
         {
-            Permutation permutation = (Permutation) variable;
+            StopDTO departureStop = stops.get(permutation.get(i));
+            StopDTO arrivalStop = stops.get(permutation.get(i+1));
 
-            double totalPrice = 0;
-            for (int i = 0; i < permutation.size() - 1; i++) {
-                StopDTO departuresStop = stops.get(permutation.get(i));
-                StopDTO arrivalStop = stops.get(permutation.get(i + 1));
-                List<FrameDTO> frames = framesService.findByIdDepartureStopAndArrivalStop(departuresStop.getId(), arrivalStop.getId());
+            List<FrameDTO> framesAux = findByIdDeparturesStopAndIdArrivalStop(departureStop.getId(), arrivalStop.getId());
 
-                FrameDTO bestPriceFrame = frames
-                        .stream()
-                        .min(Comparator.comparing(FrameDTO::getPrice))
-                        .orElse(null);
+            FrameDTO bestPrice = framesAux
+                    .stream()
+                    .min(Comparator.comparing(FrameDTO::getPrice))
+                    .orElse(null);
 
-
-                if (Objects.isNull(bestPriceFrame)) {
-                    return Double.MAX_VALUE;
-                }
-                totalPrice += bestPriceFrame.getPrice();
-                //newSolution().addAttributes("Stop "+(i+1)+": " ,bestPriceFrame.getId());
-
+            if (Objects.isNull(bestPrice))
+            {
+                return Double.MAX_VALUE;
             }
 
-
-            return totalPrice;
+            totalPrice += bestPrice.getPrice();
         }
+        totalPrice=totalPrice-1;
+        totalPrice=totalPrice+1;
+        return totalPrice;
+    }
 
-        private double totalTime (Variable variable)
+    private double totalTime(Variable variable)
+    {
+        Permutation permutation = (Permutation) variable;
+
+        double totalTime = 0;
+        FrameDTO frameDTO = null;
+
+        for (int i = 0; i < permutation.size() - 1; i++)
         {
-            Permutation permutation = (Permutation) variable;
-            double totalTime = 0;
+            StopDTO departureStop = stops.get(permutation.get(i));
+            StopDTO arrivalStop = stops.get(permutation.get(i+1));
+            Map<Integer, Long> mapTime;
 
-            for (int i = 0; i < permutation.size() - 1; i++) {
-                StopDTO departuresStop = stops.get(permutation.get(i));
-                StopDTO arrivalStop = stops.get(permutation.get(i + 1));
+            List<FrameDTO> framesAux = findByIdDeparturesStopAndIdArrivalStop(departureStop.getId(), arrivalStop.getId());
 
-                List<FrameDTO> frames = framesService
-                        .findByIdDepartureStopAndArrivalStop(departuresStop.getId(), arrivalStop.getId());
+            if (framesAux.isEmpty())
+            {
+                return Double.MAX_VALUE;
+            }
 
-                Map<Integer, Long> mapTime = getTimeMaps(frames);
-                Map.Entry<Integer, Long> frameIdTimeToArrival = mapTime
-                        .entrySet()
-                        .stream()
-                        .min(Map.Entry.comparingByValue())
-                        .orElse(null);
+            if (i==0)
+            {
+                mapTime = getMapTime1(framesAux);
+            }
+            else
+            {
+                mapTime = getMapTime(framesAux, frameDTO.getArrivalDatetime());
+            }
 
+            Map.Entry<Integer, Long> frameIdDuration = mapTime
+                    .entrySet()
+                    .stream()
+                    .min(Map.Entry.comparingByValue())
+                    .orElse(null);
 
-                if (Objects.isNull(frameIdTimeToArrival)) {
-                    return Double.MAX_VALUE;
-                }
-                FrameDTO frameDTO = frames
-                        .stream()
-                        .filter(frame -> frame.getId().equals(frameIdTimeToArrival.getKey()))
-                        .findFirst()
-                        .orElse(null);
+            frameDTO = framesAux
+                    .stream()
+                    .filter(frame -> frame.getId().equals(Objects.requireNonNull(frameIdDuration).getKey()))
+                    .findFirst()
+                    .orElse(null);
 
-                if (Objects.isNull(frameDTO)) {
-                    return Double.MAX_VALUE;
-                }
+            if(Objects.isNull(frameDTO))
+            {
+                return Double.MAX_VALUE;
+            }
 
-                totalTime += frameIdTimeToArrival.getValue();
+            totalTime += frameIdDuration.getValue();
+
+        }
+        totalTime=totalTime-1;
+        totalTime=totalTime+1;
+        return totalTime;
+    }
+
+    private Map<Integer,Long> getMapTime1(List<FrameDTO> frames)
+    {
+        Map<Integer,Long> timeMap = new HashMap<>();
+
+        for(FrameDTO frame : frames)
+        {
+            if (frame.getDepartureDatetime().isBefore(frame.getArrivalDatetime()))
+            {
+                timeMap.put(frame.getId(), Duration.between(frame.getDepartureDatetime(),frame.getArrivalDatetime()).toMinutes());
+            }
+            else
+            {
+                timeMap.put(frame.getId(),1440 - Duration.between(frame.getArrivalDatetime(), frame.getDepartureDatetime()).toMinutes());
+            }
+        }
+        return timeMap;
+    }
+
+    private Map<Integer,Long> getMapTime(List<FrameDTO> frames, LocalTime previousArrivalTime)
+    {
+        Map<Integer,Long> timeMap = new HashMap<>();
+        Long tripDuration;
+        Long waitDuration;
+
+        for(FrameDTO frame : frames)
+        {
+            if (frame.getDepartureDatetime().isBefore(frame.getArrivalDatetime()))
+            {
+                tripDuration = Duration.between(frame.getDepartureDatetime(),frame.getArrivalDatetime()).toMinutes();
 
             }
-            return totalTime;
-        }
+            else
+            {
+                tripDuration = 1440 - Duration.between(frame.getArrivalDatetime(),frame.getDepartureDatetime()).toMinutes();
 
-
-        private Map<Integer, Long> getTimeMaps (List < FrameDTO > frames)
-        {
-            Map<Integer, Long> mapTime = new HashMap<>();
-
-            for (FrameDTO frame : frames) {
-                if (frame.getDepartureDatetime().isBefore(frame.getArrivalDatetime())) {
-                    Long timeToArrival = Duration.between(frame.getDepartureDatetime(), frame.getArrivalDatetime()).getSeconds();
-                    mapTime.put(frame.getId(), timeToArrival);
-                } else {
-                    Long timeToArrivalRange1 = Duration.between(frame.getDepartureDatetime(), LocalTime.MIDNIGHT).getSeconds();
-                    Long timeToArrivalRange2 = Duration.between(LocalTime.MIDNIGHT, frame.getArrivalDatetime()).getSeconds();
-                    Long timeToArrival = timeToArrivalRange1 + timeToArrivalRange2;
-                    mapTime.put(frame.getId(), timeToArrival);
-                }
             }
-            return mapTime;
+            if (previousArrivalTime.isBefore(frame.getDepartureDatetime()))
+            {
+                waitDuration = Duration.between(previousArrivalTime, frame.getDepartureDatetime()).toMinutes();
+            }
+            else
+            {
+                waitDuration = 1440 - Duration.between(frame.getDepartureDatetime(), previousArrivalTime).toMinutes();
+            }
 
+            timeMap.put(frame.getId(),tripDuration+waitDuration);
 
-            //tarea: hacer que el tiempo de salida del siguiente bondi sea entre hora de llegada y medianoche,
-            // o sumar eso a la hora de salida a partir de la medianoche
         }
+        return timeMap;
+    }
 
-        @Override
-        public Solution newSolution () {
-            Solution solution = new Solution(1, 2);
-            solution.setVariable(0, EncodingUtils.newPermutation(20));
-            return solution;
-        }
+    public List<FrameDTO> findByIdDeparturesStopAndIdArrivalStop(Integer idDepartureStop, Integer idArrivalStop)
+    {
+        List<FrameDTO> result = this.frames
+                .stream()
+                .filter(frameDTO -> frameDTO.getIdStopDeparture().equals(idDepartureStop))
+                .filter(frameDTO -> frameDTO.getIdStopArrival().equals(idArrivalStop))
+                .collect(Collectors.toList());
+        return result;
+    }
 
-
+    @Override
+    public Solution newSolution()
+    {
+        Solution solution = new Solution(1,2);
+        solution.setVariable(0, EncodingUtils.newPermutation(10));
+        return solution;
+    }
 }

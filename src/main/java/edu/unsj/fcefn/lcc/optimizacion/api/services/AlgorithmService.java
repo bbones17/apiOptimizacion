@@ -1,5 +1,6 @@
 package edu.unsj.fcefn.lcc.optimizacion.api.services;
 
+import antlr.ASTNULLType;
 import edu.unsj.fcefn.lcc.optimizacion.api.algorithm.RoutingProblem;
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.FrameDTO;
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.StopDTO;
@@ -23,34 +24,26 @@ import java.util.stream.StreamSupport;
 public class AlgorithmService {
 
     @Autowired
+    private AlgorithmMapper algorithmMapper;
+    @Autowired
+    private FramesService framesService;
+    @Autowired
     private StopsService stopsService;
 
-    @Autowired
-    private AlgorithmMapper algorithmMapper;
-
-    private List<StopDTO> stops;
+    List<StopDTO> stops;
+    List<FrameDTO> frames;
 
     @PostConstruct
-    private void init()
-    {
-        this.stops = stopsService
-                .findAll()
-                .stream()
-                .sorted(Comparator.comparing(StopDTO::getRanking).reversed())
-                .collect(Collectors.toList())
-                .subList(0,20);
-    }
+    private void init(){
+        stops = stopsService.getStops();
+        frames = framesService.findAll();
 
-    public List<StopDTO> getStops() {
-        return stops;
     }
-
     public List<FrameDTO> execute()
     {
-        init();
         NondominatedPopulation population = new Executor()
                 .withAlgorithm("NSGAII")
-                .withProblemClass(RoutingProblem.class)
+                .withProblemClass(RoutingProblem.class,stops,frames)
                 .withMaxEvaluations(100000)
                 .run();
 

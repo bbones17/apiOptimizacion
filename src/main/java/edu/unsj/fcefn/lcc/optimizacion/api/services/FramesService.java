@@ -21,8 +21,7 @@ public class FramesService {
     @Autowired
     FramesMapper frameMapper;
 
-    List<FrameDTO> frames;
-
+   List<FrameDTO> frames;
     @PostConstruct
     private void init(){
         this.frames=this.findAll();

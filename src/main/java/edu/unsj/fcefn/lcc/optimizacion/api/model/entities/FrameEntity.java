@@ -1,6 +1,10 @@
 package edu.unsj.fcefn.lcc.optimizacion.api.model.entities;
 
 
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.annotations.SQLInsert;
+
 import javax.persistence.*;
 import java.time.LocalTime;
 
@@ -21,30 +25,16 @@ import java.time.LocalTime;
     private Integer IdStopArrival;
     @Column(name="price")
     private Float   price;
-    @Column(name="category")
+    @Column(name="category" )
     private String category;
     @Column(name="departure_datetime")
     private LocalTime departureDatetime;
-    @Column(name="arrival_departure")
+    @Column(name="arrival_datetime")
     private LocalTime arrivalDatetime;
 
-/*
-@OneToOne
-@JoinColumn(name="id_transport_company")
-@NotFound(action= NotFoundAction.IGNORE)
-private TransportCompanyEntity transportCompany;
 
-@OneToOne
-@JoinColumn(name="id_stop_departure")
-@NotFound(action=NotFoundAction.IGNORE)
-private StopEntity departureStop;
 
-@OneToOne
-@JoinColumn(name="id_stop_arrival")
-@NotFound(action=NotFoundAction.IGNORE)
-private StopEntity arrivalStop;
 
-*/
 
     public Integer getId() {
         return id;
@@ -106,10 +96,7 @@ private StopEntity arrivalStop;
         return IdStopArrival;
     }
 
-    public void setIdStopArrival(Integer idStopArrival) {
-        IdStopArrival = idStopArrival;
+   public void setIdStopArrival(Integer idStopArrival) {
+        this.IdStopArrival = idStopArrival;
     }
-
-
-
 }
