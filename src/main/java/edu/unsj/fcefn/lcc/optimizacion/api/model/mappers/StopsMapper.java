@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 public class StopsMapper {
     public StopDTO entityToDTO(StopEntity stopEntity) {
         StopDTO stopDTO = new StopDTO();
+
+
         stopDTO.setId(stopEntity.getId());
         stopDTO.setName(stopEntity.getName());
         stopDTO.setCity(stopEntity.getCity());

@@ -33,6 +33,18 @@ public class RoutingProblem extends AbstractProblem {
         solution.setObjective(1, totalTime(solution.getVariable(0)));
     }
 
+    @Override
+    public Solution newSolution()
+    {
+        Solution solution = new Solution(1,2);
+        solution.setVariable(0, EncodingUtils.newPermutation(14));
+        return solution;
+    }
+
+
+
+
+
     private double totalPrice(Variable variable)
     {
         Permutation permutation = (Permutation) variable;
@@ -58,8 +70,6 @@ public class RoutingProblem extends AbstractProblem {
 
             totalPrice += bestPrice.getPrice();
         }
-        totalPrice=totalPrice-1;
-        totalPrice=totalPrice+1;
         return totalPrice;
     }
 
@@ -112,8 +122,6 @@ public class RoutingProblem extends AbstractProblem {
             totalTime += frameIdDuration.getValue();
 
         }
-        totalTime=totalTime-1;
-        totalTime=totalTime+1;
         return totalTime;
     }
 
@@ -168,6 +176,7 @@ public class RoutingProblem extends AbstractProblem {
         return timeMap;
     }
 
+
     public List<FrameDTO> findByIdDeparturesStopAndIdArrivalStop(Integer idDepartureStop, Integer idArrivalStop)
     {
         List<FrameDTO> result = this.frames
@@ -178,11 +187,8 @@ public class RoutingProblem extends AbstractProblem {
         return result;
     }
 
-    @Override
-    public Solution newSolution()
-    {
-        Solution solution = new Solution(1,2);
-        solution.setVariable(0, EncodingUtils.newPermutation(10));
-        return solution;
-    }
+
+
+
+
 }

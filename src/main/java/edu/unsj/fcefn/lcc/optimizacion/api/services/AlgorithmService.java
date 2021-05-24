@@ -1,6 +1,5 @@
 package edu.unsj.fcefn.lcc.optimizacion.api.services;
 
-import antlr.ASTNULLType;
 import edu.unsj.fcefn.lcc.optimizacion.api.algorithm.RoutingProblem;
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.FrameDTO;
 import edu.unsj.fcefn.lcc.optimizacion.api.model.domain.StopDTO;
@@ -10,7 +9,6 @@ import org.moeaframework.core.variable.Permutation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.moeaframework.Executor;
-
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -24,11 +22,13 @@ import java.util.stream.StreamSupport;
 public class AlgorithmService {
 
     @Autowired
-    private AlgorithmMapper algorithmMapper;
+    StopsService stopsService;
+
     @Autowired
-    private FramesService framesService;
+    FramesService framesService;
+
     @Autowired
-    private StopsService stopsService;
+    AlgorithmMapper algorithmMapper;
 
     List<StopDTO> stops;
     List<FrameDTO> frames;
@@ -39,11 +39,12 @@ public class AlgorithmService {
         frames = framesService.findAll();
 
     }
+
     public List<FrameDTO> execute()
     {
         NondominatedPopulation population = new Executor()
                 .withAlgorithm("NSGAII")
-                .withProblemClass(RoutingProblem.class,stops,frames)
+                .withProblemClass(RoutingProblem.class, stops, frames)
                 .withMaxEvaluations(100000)
                 .run();
 
@@ -54,10 +55,4 @@ public class AlgorithmService {
                 .findFirst()
                 .orElse(new ArrayList<>());
     }
-
-
-
-
-
-
 }

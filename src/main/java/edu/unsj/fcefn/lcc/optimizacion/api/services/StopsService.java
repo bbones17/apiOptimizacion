@@ -23,7 +23,7 @@ public class StopsService {
     StopsRepository stopsRepository;
     List<StopDTO> stops;
 
-  @PostConstruct
+    @PostConstruct
     private void init()
     {
         this.stops =this
@@ -31,7 +31,7 @@ public class StopsService {
                 .stream()
                 .sorted(Comparator.comparing(StopDTO::getRanking).reversed())
                 .collect(Collectors.toList())
-                .subList(0,10);
+                .subList(0,14);
     }
 
     public List<StopDTO> getStops() {
