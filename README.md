@@ -1,5 +1,2 @@
-<<<<<<< HEAD
 # apiOptimizacion.
-=======
-# apiOptimizacion
->>>>>>> origin/master
+API de AG para encontrar mejor ruta entre ciudades.
